@@ -1,0 +1,23 @@
+#!/bin/bash
+# config-changed occurs everytime a new configuration value is updated (juju set)
+
+set -eux
+
+UNIT_NAME=${JUJU_UNIT_NAME//\//_}
+APP_PACKAGE_DIR=`config-get app_package_dir`
+APP_PATH="/srv/$UNIT_NAME/application/$APP_PACKAGE_DIR"
+APP_PASTE_FILE=`config-get app_paste_file`
+
+cd $APP_PATH
+
+GEARBOX=`config-get gearbox`
+if [ ! -z "GEARBOX" ]; then
+    GEARBOX_CMD=`echo "$GEARBOX" | cut -d" " -f1`
+    CMDLEN=${#GEARBOX_CMD}
+    if [ "$CMDLEN" -gt 0 ]; then
+        SUBCMD=${GEARBOX:$CMDLEN} 
+        CMD="gearbox $GEARBOX_CMD -c $APP_PASTE_FILE $SUBCMD"
+        juju-log "Running: $CMD"
+        $CMD
+    fi
+fi

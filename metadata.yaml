@@ -1,0 +1,13 @@
+name: turbogears2
+summary: Deploys a TurboGears2 based Python application on mod_wsgi
+maintainer: Alessandro Molina <alessandro.molina@axant.it>
+description: |
+  Given a python package name or repository it deploys it as a TurboGears web application.
+categories:
+  - app-servers
+requires:
+  db:
+    interface: mysql
+provides:
+  website:
+    interface: http

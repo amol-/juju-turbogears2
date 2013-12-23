@@ -1,0 +1,28 @@
+options:
+  app_package:
+    type: string
+    default: "PLEASE_SPECIFY_APPLICATION"
+    description: "The application package available on PyPi or the git repository containing it"
+  app_package_type:
+    type: string
+    default: "pypi"
+    description: "The application type: HG, GIT, PYPI"
+  app_package_dir:
+    type: string
+    default: "."
+  app_package:
+    type: string
+    default: "myapp"
+  gearbox:
+    type: string
+    default: ""
+    description: "Run a Gearbox command"
+  app_paste_file:
+    type: string
+    default: "production.ini"
+  app_mount_point:
+    type: string
+    default: "/"
+  app_statics_dir:
+    type: string
+    default: public 

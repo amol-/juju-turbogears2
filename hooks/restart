@@ -1,0 +1,3 @@
+#!/bin/bash
+set -eux 
+service apache2 restart

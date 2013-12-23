@@ -1,0 +1,27 @@
+#!/bin/bash
+# This must be renamed to the name of the relation. The goal here is to
+# affect any change needed by relationships being formed
+# This script should be idempotent.
+set -ux 
+
+UNIT_NAME=${JUJU_UNIT_NAME//\//_}
+
+juju-log $UNIT_NAME
+
+APP_PACKAGE_DIR=`config-get app_package_dir`
+APP_PASTE_FILE=`config-get app_paste_file`
+APP_PATH="/srv/$UNIT_NAME/application/$APP_PACKAGE_DIR"
+
+CONFIG_FILE="$APP_PATH/$APP_PASTE_FILE"
+
+DB_DATABASE=`relation-get database`
+DB_USER=`relation-get user`
+DB_PASSWORD=`relation-get password`
+DB_HOST=`relation-get private-address`
+DB_URL="mysql://$DB_USER:$DB_PASSWORD@$DB_HOST/$DB_DATABASE"
+
+juju-log $DB_URL
+
+sed -i "s#^\(sqlalchemy\.url=\s*\).*\$#\1$DB_URL#" $CONFIG_FILE
+
+service apache2 restart

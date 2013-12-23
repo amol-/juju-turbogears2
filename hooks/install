@@ -1,0 +1,93 @@
+#!/bin/bash
+# Here do anything needed to install the service
+# i.e. apt-get install -y foo  or  bzr branch http://myserver/mycode /srv/webroot
+# Make sure this hook exits cleanly and is idempotent, common problems here are
+# failing to account for a debconf question on a dependency, or trying to pull
+# from github without installing git first.
+
+set -eux
+
+UNIT_NAME=${JUJU_UNIT_NAME//\//_}
+CHARM_PATH=$(dirname $0)/..
+
+juju-log "Charm path of '$JUJU_UNIT_NAME'? $CHARM_PATH."
+
+juju-log "Installing Development Dependencies"
+sudo apt-get install --no-install-recommends -y build-essential libmysqlclient-dev libjpeg-dev zlib1g-dev python-dev
+
+juju-log "Installing Python Dependencies"
+sudo apt-get install --no-install-recommends -y python-distribute python-pip libapache2-mod-wsgi
+pip install --upgrade setuptools
+pip install --upgrade PasteDeploy
+pip install --upgrade jinja2
+
+juju-log "Deploying WSGI Application."
+
+# Ignore checking for git host
+mkdir -p ~/.ssh
+if [ ! -e "~/.ssh/config" ]; then
+    cat > ~/.ssh/config <<EOF
+Host *
+StrictHostKeyChecking no
+UserKnownHostsFile /dev/null
+EOF
+fi
+
+# Clone app and install dependencies
+mkdir -p /srv/$UNIT_NAME
+cd /srv/$UNIT_NAME
+
+APP_PACKAGE=`config-get app_package`
+APP_PACKAGE_TYPE=`config-get app_package_type`
+APP_PACKAGE_DIR=`config-get app_package_dir`
+APP_PASTE_FILE=`config-get app_paste_file`
+
+APP_PATH="/srv/$UNIT_NAME/application/$APP_PACKAGE_DIR"
+
+if [ -e application ]; then
+    set +e
+    cd application
+    git pull
+    hg pull -u
+    set -e
+else
+    if [ $APP_PACKAGE_TYPE == "git" ]; then
+        juju-log "Deploying from GIT repository"
+        sudo apt-get install --no-install-recommends -y git
+        git clone $APP_PACKAGE application
+    elif [ $APP_PACKAGE_TYPE == "hg" ]; then
+        juju-log "Deploying from MERCURIAL repository"
+        sudo apt-get install --no-install-recommends -y mercurial
+        hg clone $APP_PACKAGE application
+    fi
+
+    cd application
+fi
+
+cd $APP_PACKAGE_DIR
+
+cat > wsgi.py << EOF
+from paste.deploy import loadapp
+application = loadapp('config:$APP_PATH/$APP_PASTE_FILE')
+EOF
+
+
+APP_MOUNT_POINT=`config-get app_mount_point`
+APP_STATICS_DIR=`config-get app_statics_dir`
+APP_PACKAGE=`config-get app_package`
+APP_STATICS_PATH="$APP_PATH/$APP_PACKAGE_DIR/$APP_PACKAGE/$APP_STATICS_DIR"
+
+cat > "/etc/apache2/sites-enabled/$UNIT_NAME" << EOF
+Alias $APP_MOUNT_POINT/img $APP_STATICS_PATH/img
+Alias $APP_MOUNT_POINT/images $APP_STATICS_PATH/images
+Alias $APP_MOUNT_POINT/js $APP_STATICS_PATH/js
+Alias $APP_MOUNT_POINT/javascript $APP_STATICS_PATH/javascript
+AliasMatch ^$APP_MOUNT_POINT/css/(.*)\.css$ $APP_STATICS_PATH/css/\$1.css
+
+WSGIScriptAlias $APP_MOUNT_POINT $APP_PATH/wsgi.py
+EOF
+
+pip install -U -e .
+
+juju-log "App deployed."
+
