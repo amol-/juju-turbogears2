@@ -90,6 +90,11 @@ AliasMatch ^$APP_MOUNT_POINT/css/(.*)\.css$ $APP_STATICS_PATH/css/\$1.css
 WSGIScriptAlias $APP_MOUNT_POINT $APP_PATH/wsgi.py
 EOF
 
+cat > "/etc/apache2/conf.d/wsgi.conf" << EOF
+WSGIDaemonProcess wsgi processes=4 threads=5 user=www-data group=www-data display-name=wsgi
+WSGIProcessGroup wsgi
+EOF
+
 pip install -U -e .
 
 juju-log "App deployed."
