@@ -21,6 +21,9 @@ pip install --upgrade setuptools
 pip install --upgrade PasteDeploy
 pip install --upgrade jinja2
 
+juju-log "Installing TurboGears2 Development Tools"
+pip install --upgrade tg.devtools
+
 juju-log "Deploying WSGI Application."
 
 # Ignore checking for git host
