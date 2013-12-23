@@ -78,7 +78,7 @@ EOF
 APP_MOUNT_POINT=`config-get app_mount_point`
 APP_STATICS_DIR=`config-get app_statics_dir`
 APP_PACKAGE=`config-get app_package`
-APP_STATICS_PATH="$APP_PATH/$APP_PACKAGE_DIR/$APP_PACKAGE/$APP_STATICS_DIR"
+APP_STATICS_PATH="$APP_PATH/$APP_PACKAGE/$APP_STATICS_DIR"
 
 cat > "/etc/apache2/sites-enabled/$UNIT_NAME" << EOF
 Alias $APP_MOUNT_POINT/img $APP_STATICS_PATH/img
